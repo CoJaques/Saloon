@@ -41,4 +41,3 @@ build/
 /qodana.yaml
 server/dependency-reduced-pom.xml
 .idea/encodings.xml
-/.idea/
