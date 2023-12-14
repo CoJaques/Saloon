@@ -6,19 +6,20 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
+
 import picocli.CommandLine;
 
+import java.util.Objects;
 import java.util.Scanner;
 
 
 @CommandLine.Command(name = "ChatClient", mixinStandardHelpOptions = true, version = "1.0",
-                     description = "Client UDP pour un chat en ligne")
+        description = "Client UDP pour un chat en ligne")
 public class SaloonClient implements Runnable {
 
     private String userName;
-    private Scanner scanner;
+    private final Scanner scanner = new Scanner(System.in);
     private byte[] buffer;
-
 
     @Override
     public void run() {
@@ -27,9 +28,6 @@ public class SaloonClient implements Runnable {
         try {
             // Création du socket unicast
             socket = new DatagramSocket();
-
-            // Envoi du nom du client au serveur pour l'enregistrement
-            ConnectMessage(socket, Utils.HOST, Utils.PORT);
 
             // Thread pour la réception des messages du serveur
             DatagramSocket clientToServSocket = socket;
@@ -44,10 +42,17 @@ public class SaloonClient implements Runnable {
                 try {
                     while (true) {
                         String message = scanner.nextLine();
-                            sendMessage(message, clientToSaloonSocket, Utils.HOST, Utils.PORT);
+                        Message msgType = defineMessageType(message);
+
+                        switch (msgType) {
+                            case CONNECT -> ConnectMessage(message, clientToSaloonSocket, Utils.HOST, Utils.PORT);
+                            case MSG ->
+                            case PM ->
+                            case WHO -> WhoMessage(message, clientToSaloonSocket, Utils.HOST, Utils.PORT);
+                            case QUIT -> QuitMessage(message, clientToSaloonSocket, Utils.HOST, Utils.PORT); // TODO WSI Gestion deco
+                        }
                     }
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             });
@@ -58,11 +63,9 @@ public class SaloonClient implements Runnable {
             receiveThread.join();
             sendThread.join();
 
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             if (socket != null && !socket.isClosed()) {
                 socket.close();
             }
@@ -70,14 +73,14 @@ public class SaloonClient implements Runnable {
     }
 
     // region Send / Receive
-    private void sendMessage(String message, DatagramSocket socket, String serverHost, int serverPort) {
+    private void sendMessageToSaloon(Message msgType, String txt, DatagramSocket socket, String serverHost, int serverPort) {
         try (DatagramSocket datagramSocket = socket) {
-            byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
+            String formattedMessage = Utils.formatMessage(msgType, userName, "Saloon", txt);
+            byte[] messageBytes = formattedMessage.getBytes(StandardCharsets.UTF_8);
             InetAddress serverAddress = InetAddress.getByName(serverHost);
             DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length, serverAddress, serverPort);
             datagramSocket.send(packet);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -95,32 +98,50 @@ public class SaloonClient implements Runnable {
                         receivedPacket.getLength(),
                         StandardCharsets.UTF_8
                 );
-                //System.out.println("Unicast receiver (" + userName + ") received message: " + receivedMessage);
+                // TODO WSI : MANAGE_ANSWER Gérer le cas du /qui
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private Message defineMessageType(String txt) {
+        if (txt.startsWith("/")) {
+            String[] splittedTxt = txt.split(" ");
+
+            if (Objects.equals(splittedTxt[0], "/connect")) {
+                return Message.CONNECT;
+            } else if (Objects.equals(splittedTxt[0], "/who")) {
+                return Message.WHO;
+            } else if (Objects.equals(splittedTxt[0], "/quit")) {
+                return Message.QUIT;
+            } else if (Objects.equals(splittedTxt[0], "/pm")) {
+                return Message.PM;
+            }
+        }
+        return Message.MSG;
     }
     // endregion
 
 
     // region command
-    private void ConnectMessage(DatagramSocket socket, String serverHost, int serverPort) {
-        String userName = getUserName();
-        String msg = "My name is " + userName;
-        String formatedMsg = Utils.formatMessage(Message.CONNECT, userName, "Saloon", msg);
+    private void ConnectMessage(String message, DatagramSocket socket, String serverHost, int serverPort) {
+        userName = getUserName();
+        sendMessageToSaloon(Message.CONNECT, message, socket, serverHost, serverPort);
+    }
 
-        sendMessage(formatedMsg, socket, serverHost, serverPort);
+    private void WhoMessage (String message, DatagramSocket socket, String serverHost, int serverPort) {
+        sendMessageToSaloon(Message.WHO, message, socket, serverHost, serverPort);
+    }
+
+    private void QuitMessage(String message, DatagramSocket socket, String serverHost, int serverPort) {
+        sendMessageToSaloon(Message.QUIT, message, socket, serverHost, serverPort);
     }
     // endregion
 
 
     // Private tool
     private String getUserName() {
-        Scanner scanner = new Scanner(System.in);
-        String userName;
-
         do {
             System.out.println("Enter username");
             userName = scanner.nextLine();
@@ -145,24 +166,3 @@ public class SaloonClient implements Runnable {
     }
     // endregion
 }
-
-
-//class CommandHandler implements Runnable {
-//
-//    @Override
-//    public void run() {
-//        try {
-//            if (privateMessage) {
-//                // Logique pour envoyer un message privé
-//                String privateMessage = "[" + target + " (privé)]: " + String.join(" ", message);
-//                privateMessagesQueue.offer(privateMessage); // Ajouter à la file d'attente
-//            }
-//            else {
-//                System.out.println("Commande non reconnue. Utilisez --private pour envoyer un message privé.");
-//            }
-//        }
-//        catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-//}
