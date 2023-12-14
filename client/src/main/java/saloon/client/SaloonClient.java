@@ -34,7 +34,7 @@ public class SaloonClient implements Runnable {
             // Thread pour la réception des messages du serveur
             DatagramSocket clientToServSocket = socket;
             Thread receiveThread = new Thread(() -> {
-                ReceiveMessage(DatagramSocket clientToServSocket);
+                ReceiveMessage(clientToServSocket);
             });
             receiveThread.start();
 
@@ -105,17 +105,11 @@ public class SaloonClient implements Runnable {
     // endregion
 
 
-    // region Move To Utils
-    private String formatMessage(Message msg, String sourceUserName, String destUserName, String txt) {
-        return msg.name() + Utils.SEPARATOR + sourceUserName + Utils.SEPARATOR +
-                destUserName + Utils.SEPARATOR + txt + Utils.EOL;
-    }
-
     // region command
     private void ConnectMessage(DatagramSocket socket, String serverHost, int serverPort) {
         String userName = getUserName();
         String msg = "My name is " + userName;
-        String formatedMsg = formatMessage(Message.CONNECT, userName, "Saloon", msg);
+        String formatedMsg = Utils.formatMessage(Message.CONNECT, userName, "Saloon", msg);
 
         sendMessage(formatedMsg, socket, serverHost, serverPort);
     }
