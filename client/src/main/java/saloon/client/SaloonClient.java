@@ -1,6 +1,6 @@
 package saloon.client;
 
-import saloon.common.Utils;
+import saloon.common.*;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -75,36 +75,10 @@ public class SaloonClient implements Runnable {
             });
             sendThread.start();
 
-            // Thread pour l'envoi des messages privés
-            DatagramSocket ClientPmSocket = socket;
-            Thread privateMessageThread = new Thread(() -> {
-                try {
-                    while (true) {
-                        String privateMessage = privateMessagesQueue.take(); // Bloquant
-                        sendPrivateMessage(privateMessage, ClientPmSocket, Utils.HOST, Utils.PORT);
-                    }
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-            privateMessageThread.start();
-
-            // Thread pour l'interface utilisateur (Picocli)
-            Thread userInterfaceThread = new Thread(() -> {
-                CommandLine commandLine = new CommandLine(new CommandHandler(privateMessagesQueue));
-                while (true) {
-                    String command = scanner.nextLine();
-                    commandLine.execute(command.split(" "));
-                }
-            });
-            userInterfaceThread.start();
 
             // Attendez que les threads se terminent
             receiveThread.join();
             sendThread.join();
-            privateMessageThread.join();
-            userInterfaceThread.join();
 
         }
         catch (Exception e) {
@@ -129,31 +103,11 @@ public class SaloonClient implements Runnable {
         }
     }
 
-    private static void sendPrivateMessage(String message, DatagramSocket socket, String serverHost, int serverPort) {
-        // Logique pour envoyer un message privé...
-        sendMessage(message, socket, serverHost, serverPort);
-    }
+    // TODO WSI : Méthode receive case ->
 }
 
 
-@CommandLine.Command(name = "commands", mixinStandardHelpOptions = true, version = "1.0",
-                     description = "Commandes du client")
 class CommandHandler implements Runnable {
-
-    private final BlockingQueue<String> privateMessagesQueue;
-
-    @CommandLine.Option(names = {"-p", "--private"}, description = "Envoyer un message privé")
-    private boolean privateMessage;
-
-    @CommandLine.Parameters(index = "0", description = "Nom du salon ou destinataire du message privé")
-    private String target;
-
-    @CommandLine.Parameters(index = "1..*", description = "Message à envoyer")
-    private String[] message;
-
-    public CommandHandler(BlockingQueue<String> privateMessagesQueue) {
-        this.privateMessagesQueue = privateMessagesQueue;
-    }
 
     @Override
     public void run() {
