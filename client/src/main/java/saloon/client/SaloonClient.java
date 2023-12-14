@@ -7,16 +7,18 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import picocli.CommandLine;
+
 import java.util.Scanner;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 
 @CommandLine.Command(name = "ChatClient", mixinStandardHelpOptions = true, version = "1.0",
                      description = "Client UDP pour un chat en ligne")
 public class SaloonClient implements Runnable {
 
-    private final BlockingQueue<String> privateMessagesQueue = new LinkedBlockingQueue<>();
+    private String userName;
+    private Scanner scanner;
+    private byte[] buffer;
+
 
     @Override
     public void run() {
@@ -26,37 +28,13 @@ public class SaloonClient implements Runnable {
             // Création du socket unicast
             socket = new DatagramSocket();
 
-            // On demande et récupère le user name
-            Scanner scanner = new Scanner(System.in);
-            System.out.println("Enter username");
-
-            String userName = scanner.nextLine();
-            System.out.println("Username is: " + userName);
-
             // Envoi du nom du client au serveur pour l'enregistrement
-            sendMessage(userName, socket, Utils.HOST, Utils.PORT);
+            ConnectMessage(socket, Utils.HOST, Utils.PORT);
 
             // Thread pour la réception des messages du serveur
             DatagramSocket clientToServSocket = socket;
             Thread receiveThread = new Thread(() -> {
-                try {
-                    while (true) {
-                        byte[] buffer = new byte[1024];
-                        DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
-                        clientToServSocket.receive(receivedPacket);
-
-                        String receivedMessage = new String(
-                                receivedPacket.getData(),
-                                receivedPacket.getOffset(),
-                                receivedPacket.getLength(),
-                                StandardCharsets.UTF_8
-                        );
-                        System.out.println("Unicast receiver (" + userName + ") received message: " + receivedMessage);
-                    }
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
+                ReceiveMessage(DatagramSocket clientToServSocket);
             });
             receiveThread.start();
 
@@ -91,7 +69,8 @@ public class SaloonClient implements Runnable {
         }
     }
 
-    private static void sendMessage(String message, DatagramSocket socket, String serverHost, int serverPort) {
+    // region Send / Receive
+    private void sendMessage(String message, DatagramSocket socket, String serverHost, int serverPort) {
         try (DatagramSocket datagramSocket = socket) {
             byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
             InetAddress serverAddress = InetAddress.getByName(serverHost);
@@ -103,26 +82,93 @@ public class SaloonClient implements Runnable {
         }
     }
 
-    // TODO WSI : Méthode receive case ->
-}
-
-
-class CommandHandler implements Runnable {
-
-    @Override
-    public void run() {
+    private void ReceiveMessage(DatagramSocket clientToServSocket) {
         try {
-            if (privateMessage) {
-                // Logique pour envoyer un message privé
-                String privateMessage = "[" + target + " (privé)]: " + String.join(" ", message);
-                privateMessagesQueue.offer(privateMessage); // Ajouter à la file d'attente
-            }
-            else {
-                System.out.println("Commande non reconnue. Utilisez --private pour envoyer un message privé.");
+            while (true) {
+                buffer = new byte[1024];
+                DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
+                clientToServSocket.receive(receivedPacket);
+
+                String receivedMessage = new String(
+                        receivedPacket.getData(),
+                        receivedPacket.getOffset(),
+                        receivedPacket.getLength(),
+                        StandardCharsets.UTF_8
+                );
+                //System.out.println("Unicast receiver (" + userName + ") received message: " + receivedMessage);
             }
         }
         catch (Exception e) {
             e.printStackTrace();
         }
     }
+    // endregion
+
+
+    // region Move To Utils
+    private String formatMessage(Message msg, String sourceUserName, String destUserName, String txt) {
+        return msg.name() + Utils.SEPARATOR + sourceUserName + Utils.SEPARATOR +
+                destUserName + Utils.SEPARATOR + txt + Utils.EOL;
+    }
+
+    // region command
+    private void ConnectMessage(DatagramSocket socket, String serverHost, int serverPort) {
+        String userName = getUserName();
+        String msg = "My name is " + userName;
+        String formatedMsg = formatMessage(Message.CONNECT, userName, "Saloon", msg);
+
+        sendMessage(formatedMsg, socket, serverHost, serverPort);
+    }
+    // endregion
+
+
+    // Private tool
+    private String getUserName() {
+        Scanner scanner = new Scanner(System.in);
+        String userName;
+
+        do {
+            System.out.println("Enter username");
+            userName = scanner.nextLine();
+
+            // Vérification si le nom d'utilisateur est en UTF-8
+            if (!isUTF8(userName)) {
+                System.out.println("Invalid username. Please enter a valid UTF-8 username.");
+            }
+        } while (!isUTF8(userName));
+
+        return userName;
+    }
+
+    private boolean isUTF8(String str) {
+        try {
+            // Tentative de conversion de la chaîne en tableau de bytes en utilisant UTF-8
+            str.getBytes(StandardCharsets.UTF_8);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    // endregion
 }
+
+
+//class CommandHandler implements Runnable {
+//
+//    @Override
+//    public void run() {
+//        try {
+//            if (privateMessage) {
+//                // Logique pour envoyer un message privé
+//                String privateMessage = "[" + target + " (privé)]: " + String.join(" ", message);
+//                privateMessagesQueue.offer(privateMessage); // Ajouter à la file d'attente
+//            }
+//            else {
+//                System.out.println("Commande non reconnue. Utilisez --private pour envoyer un message privé.");
+//            }
+//        }
+//        catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
+//}
