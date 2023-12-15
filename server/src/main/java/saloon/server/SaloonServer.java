@@ -6,6 +6,7 @@ import saloon.common.Utils;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,28 +44,23 @@ public class SaloonServer {
 
     }
 
+    private Message parseCommandAndCheckLenght(String[] parsedMessage) {
+        if (parsedMessage.length < 2) {
+            System.out.println("Invalid message, username or command not define " + Arrays.toString(parsedMessage));
+            return null;
+        }
+        return getCommand(parsedMessage);
+    }
+
     public void managePacket(DatagramPacket packet) {
         String message = new String(packet.getData(), 0, packet.getLength());
         String[] messageParts = message.split(Utils.SEPARATOR);
 
-        Message command = getCommand(messageParts);
+        Message command = parseCommandAndCheckLenght(messageParts);
         if (command == null) return;
 
         Client client = new Client(packet.getAddress(), packet.getPort(), messageParts[1]);
-
-        if (command == Message.CONNECT) {
-            manageConnection(client);
-        } else {
-            if (!clients.containsKey(client.username())) {
-                System.out.println("Unregistered client tried to send a message : " + message);
-                return;
-            } else {
-                System.out.println("Client " + client.username() + " sent a message");
-                manageCommand(command, client, messageParts);
-            }
-        }
-
-        System.out.println("Message received : " + message);
+        manageCommand(command, client, messageParts);
     }
 
     private void manageConnection(Client client) {
@@ -79,26 +75,41 @@ public class SaloonServer {
             clients.put(client.username(), client);
             sendUnicastMessage(Message.OK.name(), client);
             System.out.println("Client " + client.username() + " connected");
+        } else {
+            System.out.println("Client " + client.username() + " already connected");
+            sendUnicastMessage(Message.KO.name(), client);
         }
     }
 
     private void manageCommand(Message command, Client client, String[] messageParts) {
-        switch (command) {
-            case MSG:
-                sendMulticastMessage(client, messageParts[2]);
-                break;
-            case PM:
-                formatAndSendPrivateMessage(client, messageParts);
-                break;
-            case WHO:
-                senWhoRequest(client);
-                break;
-            case QUIT:
-                clients.remove(client.username());
-                break;
-            default:
-                System.out.println("Invalid command " + command);
+
+        if (command == Message.CONNECT) {
+            manageConnection(client);
+        } else if (clients.containsKey(client.username())) {
+            switch (command) {
+                case MSG:
+                    sendMulticastMessage(client, messageParts[2]);
+                    break;
+                case PM:
+                    formatAndSendPrivateMessage(client, messageParts);
+                    break;
+                case WHO:
+                    senWhoRequest(client);
+                    break;
+                case QUIT:
+                    manageQuitRequest(client);
+                    break;
+                default:
+                    System.out.println("Invalid command " + command);
+            }
+        } else {
+            System.out.println("Unregistered client tried to send a message : " + messageParts[0]);
         }
+    }
+
+    private void manageQuitRequest(Client client) {
+        clients.remove(client.username());
+        sendMulticastMessage(client, "Client " + client.username() + " left the saloon");
     }
 
     private void senWhoRequest(Client client) {
@@ -110,11 +121,13 @@ public class SaloonServer {
     }
 
     private void formatAndSendPrivateMessage(Client sender, String[] messageParts) {
-        String message = Message.PM.name() + Utils.SEPARATOR + sender.username() + Utils.SEPARATOR + messageParts[2] + Utils.SEPARATOR + Utils.EOL;
+        String message =
+                Message.PM.name() + Utils.SEPARATOR + sender.username() + Utils.SEPARATOR + messageParts[2] + Utils.SEPARATOR + messageParts[3] + Utils.EOL;
+
         Client receiver = clients.get(messageParts[2]);
         if (receiver == null) {
-            System.out.println("Client " + messageParts[1] + " not found");
-            sendUnicastMessage(Message.MSG.name() + Utils.SEPARATOR + "Client " + messageParts[1] + " not found" + Utils.EOL, sender);
+            System.out.println("Client " + messageParts[2] + " not found");
+            sendUnicastMessage(Message.PM.name() + Utils.SEPARATOR + "Client " + messageParts[1] + " not found" + Utils.EOL, sender);
             return;
         }
         sendUnicastMessage(message, receiver);
@@ -147,7 +160,7 @@ public class SaloonServer {
         try {
             msg = Message.valueOf(messageParts[0]);
         } catch (IllegalArgumentException e) {
-            System.out.println("Invalid message " + messageParts[0]);
+            System.out.println("Invalid command " + Arrays.toString(messageParts));
             return null;
         }
         return msg;

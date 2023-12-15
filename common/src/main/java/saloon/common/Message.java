@@ -6,5 +6,6 @@ public enum Message {
     PM,
     WHO,
     OK,
+    KO,
     QUIT
 }
