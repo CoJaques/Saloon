@@ -12,15 +12,21 @@ import java.util.Scanner;
 
 public class SaloonClient implements Runnable {
 
-    SaloonClient(String host, int uniPort, String interfaceName) throws IOException {
-        socket = new DatagramSocket(uniPort, new InetSocketAddress(host, uniPort).getAddress());
-        // TODO NO NEED
+    SaloonClient(String host, String multiHost,int uniPort, int multiPort,String interfaceName) throws IOException {
+        socket = new DatagramSocket(uniPort);
+        multicastSocket = new MulticastSocket(multiPort);
+
+        InetAddress resolvedAddress = InetAddress.getByName(multiHost);
+        group = new InetSocketAddress(resolvedAddress, multiPort);
         NetworkInterface networkInterface = NetworkInterface.getByName(interfaceName);
+        multicastSocket.joinGroup(group, networkInterface);
     }
 
     private String userName = null;
     private final Scanner scanner = new Scanner(System.in);
     private final DatagramSocket socket;
+    private final MulticastSocket multicastSocket;
+    private final InetSocketAddress group;
 
     @Override
     public void run() {
@@ -29,11 +35,18 @@ public class SaloonClient implements Runnable {
 
         try {
             // Thread pour la réception des messages du serveur
-            DatagramSocket clientToServSocket = socket;
+            DatagramSocket clientFromServSocket = socket;
             Thread receiveThread = new Thread(() -> {
-                listen(clientToServSocket);
+                listen(clientFromServSocket);
             });
             receiveThread.start();
+
+            // Thread pour la réception des messages multicast du serveur
+            MulticastSocket clientFromServMultiSocket = multicastSocket;
+            Thread receiveMultiThread = new Thread (() -> {
+               listen(clientFromServMultiSocket);
+            });
+            receiveMultiThread.start();
 
             // Thread pour l'envoi des messages au salon
             DatagramSocket clientToSaloonSocket = socket;
@@ -46,9 +59,9 @@ public class SaloonClient implements Runnable {
             e.printStackTrace();
         }
         finally {
-            if (socket != null && !socket.isClosed()) {
-                socket.close();
-            }
+//            if (socket != null && !socket.isClosed()) {
+//                socket.close();
+//            }
         }
     }
 
@@ -100,7 +113,7 @@ public class SaloonClient implements Runnable {
         else if (Objects.equals(messageType, Message.WHO.name())) {
             LinkedList<String> usersConnected = new LinkedList<>(Arrays.asList(chunks).subList(1, chunks.length));
 
-            System.out.println("Users connectd :");
+            System.out.println("Users connected :");
             for(String user : usersConnected) {
                 System.out.println(user);
             }

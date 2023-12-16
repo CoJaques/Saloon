@@ -12,7 +12,11 @@ public class ClientLauncher {
         new CommandLine(cmdOptions).parseArgs(args);
 
         try {
-            SaloonClient client = new SaloonClient(cmdOptions.getDefaultHost(), cmdOptions.getUniPort(),cmdOptions.getAdapter());
+            SaloonClient client = new SaloonClient(cmdOptions.getDefaultHost(),
+                                                   cmdOptions.getMulticastAddress(),
+                                                   cmdOptions.getUniPort(),
+                                                   cmdOptions.getMultiPort(),
+                                                   cmdOptions.getAdapter());
             client.run();
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
