@@ -54,6 +54,9 @@ public class SaloonServer {
 
     public void managePacket(DatagramPacket packet) {
         String message = new String(packet.getData(), 0, packet.getLength());
+
+        System.out.println("Received message: " + message);
+
         String[] messageParts = message.split(Utils.SEPARATOR);
 
         Message command = parseCommandAndCheckLenght(messageParts);
@@ -88,7 +91,7 @@ public class SaloonServer {
         } else if (clients.containsKey(client.username())) {
             switch (command) {
                 case MSG:
-                    sendMulticastMessage(client, messageParts[2]);
+                    sendMulticastMessage(client, messageParts[3]);
                     break;
                 case PM:
                     formatAndSendPrivateMessage(client, messageParts);
