@@ -12,9 +12,9 @@ public class ClientLauncher {
         new CommandLine(cmdOptions).parseArgs(args);
 
         try {
-            SaloonClient client = new SaloonClient(cmdOptions.getDefaultHost(),
+            SaloonClient client = new SaloonClient(cmdOptions.getHost(),
                                                    cmdOptions.getMulticastAddress(),
-                                                   cmdOptions.getUniPort(),
+                                                   cmdOptions.getHostPort(),
                                                    cmdOptions.getMultiPort(),
                                                    cmdOptions.getAdapter());
             client.run();

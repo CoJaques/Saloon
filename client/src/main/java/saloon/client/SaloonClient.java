@@ -1,6 +1,7 @@
 package saloon.client;
 
-import saloon.common.*;
+import saloon.common.Message;
+import saloon.common.Utils;
 
 import java.io.IOException;
 import java.net.*;
@@ -12,10 +13,12 @@ import java.util.Scanner;
 
 public class SaloonClient implements Runnable {
 
-    SaloonClient(String host, String multiHost,int uniPort, int multiPort,String interfaceName) throws IOException {
-        socket = new DatagramSocket(uniPort);
-        multicastSocket = new MulticastSocket(multiPort);
+    SaloonClient(String hostName, String multiHost, int serverPort, int multiPort, String interfaceName) throws IOException {
+        socket = new DatagramSocket();
+        this.hostName = hostName;
+        this.hostPort = serverPort;
 
+        multicastSocket = new MulticastSocket(multiPort);
         InetAddress resolvedAddress = InetAddress.getByName(multiHost);
         group = new InetSocketAddress(resolvedAddress, multiPort);
         NetworkInterface networkInterface = NetworkInterface.getByName(interfaceName);
@@ -27,6 +30,8 @@ public class SaloonClient implements Runnable {
     private final DatagramSocket socket;
     private final MulticastSocket multicastSocket;
     private final InetSocketAddress group;
+    private final String hostName;
+    private final int hostPort;
 
     @Override
     public void run() {
@@ -43,8 +48,8 @@ public class SaloonClient implements Runnable {
 
             // Thread pour la réception des messages multicast du serveur
             MulticastSocket clientFromServMultiSocket = multicastSocket;
-            Thread receiveMultiThread = new Thread (() -> {
-               listen(clientFromServMultiSocket);
+            Thread receiveMultiThread = new Thread(() -> {
+                listen(clientFromServMultiSocket);
             });
             receiveMultiThread.start();
 
@@ -57,8 +62,7 @@ public class SaloonClient implements Runnable {
 
         } catch (Exception e) {
             e.printStackTrace();
-        }
-        finally {
+        } finally {
 //            if (socket != null && !socket.isClosed()) {
 //                socket.close();
 //            }
@@ -67,16 +71,12 @@ public class SaloonClient implements Runnable {
 
     // region Send / Receive
     private void sendMessage(Message msgType, String dest, String txt, DatagramSocket socket, String serverHost, int serverPort) {
-        try (DatagramSocket datagramSocket = socket) {
-            if (dest == null || dest.isEmpty()) {
-                dest = "Saloon";
-            }
-
+        try {
             String formattedMessage = Utils.formatMessage(msgType, userName, dest, txt);
             byte[] messageBytes = formattedMessage.getBytes(StandardCharsets.UTF_8);
             InetAddress serverAddress = InetAddress.getByName(serverHost);
             DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length, serverAddress, serverPort);
-            datagramSocket.send(packet);
+            this.socket.send(packet);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -109,12 +109,11 @@ public class SaloonClient implements Runnable {
         if (Objects.equals(messageType, Message.KO.name())) {
             System.out.println("Username already existing !");
             userName = null;
-        }
-        else if (Objects.equals(messageType, Message.WHO.name())) {
+        } else if (Objects.equals(messageType, Message.WHO.name())) {
             LinkedList<String> usersConnected = new LinkedList<>(Arrays.asList(chunks).subList(1, chunks.length));
 
             System.out.println("Users connected :");
-            for(String user : usersConnected) {
+            for (String user : usersConnected) {
                 System.out.println(user);
             }
             usersConnected.clear();
@@ -130,21 +129,21 @@ public class SaloonClient implements Runnable {
                 String[] chunks;
                 switch (msgType) {
                     case CONNECT:
-                        connectMessage(message, clientToSaloonSocket, Utils.DEFAULT_HOST, Utils.UNICAST_PORT);
+                        connectMessage(message, clientToSaloonSocket);
                         break;
                     case MSG:
-                        sendPublicMessage(message, clientToSaloonSocket, Utils.DEFAULT_HOST, Utils.UNICAST_PORT);
+                        sendPublicMessage(message, clientToSaloonSocket);
                         break;
                     case PM:
                         chunks = message.split(" ");
                         String dest = chunks[1];
-                        sendPrivateMessage(message, dest, clientToSaloonSocket, Utils.DEFAULT_HOST, Utils.UNICAST_PORT);
+                        sendPrivateMessage(message, dest, clientToSaloonSocket);
                         break;
                     case WHO:
-                        whoMessage(message, clientToSaloonSocket, Utils.DEFAULT_HOST, Utils.UNICAST_PORT);
+                        whoMessage(message, clientToSaloonSocket);
                         break;
                     case QUIT:
-                        quitMessage(message, clientToSaloonSocket, Utils.DEFAULT_HOST, Utils.UNICAST_PORT);
+                        quitMessage(message, clientToSaloonSocket);
                         break;
                 }
             }
@@ -173,46 +172,42 @@ public class SaloonClient implements Runnable {
 
 
     // region command
-    private void connectMessage(String message, DatagramSocket socket, String serverHost, int serverPort) {
+    private void connectMessage(String message, DatagramSocket socket) {
         if (userName != null) {
             System.out.println("Client '" + userName + "' is already connected !");
-        }
-        else {
+        } else {
             String[] chunks = message.split(" ");
             userName = chunks[1];
-            sendMessage(Message.CONNECT, null, message, socket, serverHost, serverPort);
+            sendMessage(Message.CONNECT, null, message, socket, hostName, hostPort);
         }
     }
 
-    private void sendPublicMessage(String message, DatagramSocket socket, String serverHost, int serverPort) {
+    private void sendPublicMessage(String message, DatagramSocket socket) {
         if (userName == null) {
             System.out.println("You must be connected on the Saloon before sending a message !");
-        }
-        else {
-            sendMessage(Message.MSG, null, message, socket, serverHost, serverPort);
+        } else {
+            sendMessage(Message.MSG, null, message, socket, hostName, hostPort);
         }
     }
 
-    private void sendPrivateMessage(String message, String dest, DatagramSocket socket, String serverHost, int serverPort) {
+    private void sendPrivateMessage(String message, String dest, DatagramSocket socket) {
         if (userName == null) {
             System.out.println("You must be connected on the Saloon before sending a private message !");
-        }
-        else {
-            sendMessage(Message.PM, dest, message, socket, serverHost, serverPort);
+        } else {
+            sendMessage(Message.PM, dest, message, socket, hostName, hostPort);
         }
     }
 
-    private void whoMessage(String message, DatagramSocket socket, String serverHost, int serverPort) {
+    private void whoMessage(String message, DatagramSocket socket) {
         if (userName == null) {
             System.out.println("You must be connected on the Saloon before ask for users!");
-        }
-        else {
-            sendMessage(Message.WHO, null, message, socket, serverHost, serverPort);
+        } else {
+            sendMessage(Message.WHO, null, message, socket, hostName, hostPort);
         }
     }
 
-    private void quitMessage(String message, DatagramSocket socket, String serverHost, int serverPort) {
-        sendMessage(Message.QUIT, null, message, socket, serverHost, serverPort);
+    private void quitMessage(String message, DatagramSocket socket) {
+        sendMessage(Message.QUIT, null, message, socket, hostName, hostPort);
         //TODO Fermer l'appli proprement
     }
     // endregion

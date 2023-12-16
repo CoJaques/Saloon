@@ -54,6 +54,9 @@ public class SaloonServer {
 
     public void managePacket(DatagramPacket packet) {
         String message = new String(packet.getData(), 0, packet.getLength());
+
+        System.out.println("Received message: " + message);
+
         String[] messageParts = message.split(Utils.SEPARATOR);
 
         Message command = parseCommandAndCheckLenght(messageParts);
