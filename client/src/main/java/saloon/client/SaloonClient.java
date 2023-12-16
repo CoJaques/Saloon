@@ -72,11 +72,15 @@ public class SaloonClient implements Runnable {
     // region Send / Receive
     private void sendMessage(Message msgType, String dest, String txt, DatagramSocket socket, String serverHost, int serverPort) {
         try {
+            if (dest == null || dest.isEmpty()) {
+                dest = "Saloon";
+            }
+
             String formattedMessage = Utils.formatMessage(msgType, userName, dest, txt);
             byte[] messageBytes = formattedMessage.getBytes(StandardCharsets.UTF_8);
             InetAddress serverAddress = InetAddress.getByName(serverHost);
             DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length, serverAddress, serverPort);
-            this.socket.send(packet);
+            socket.send(packet);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -117,6 +121,16 @@ public class SaloonClient implements Runnable {
                 System.out.println(user);
             }
             usersConnected.clear();
+        } else if (Objects.equals(messageType, Message.MSG.name()) && !Objects.equals(chunks[1], userName)) {
+            String sender = chunks[1];
+            String message = chunks[2];
+
+            System.out.println(sender + " : " + message);
+        } else if (Objects.equals(messageType, Message.PM.name())) {
+            String sender = chunks[1];
+            String message = chunks[2];
+
+            System.out.println(sender + " (private) : " + message);
         }
     }
 
