@@ -189,6 +189,8 @@ public class SaloonClient implements Runnable {
 
     private void quitMessage(String message, DatagramSocket socket) {
         sendMessage(Message.QUIT, null, message, socket, hostName, hostPort);
+        dispose();
+        System.exit(0);
     }
 
     private void chat(DatagramSocket clientToSaloonSocket) {
@@ -215,8 +217,6 @@ public class SaloonClient implements Runnable {
                         break;
                     case QUIT:
                         quitMessage(message, clientToSaloonSocket);
-                        dispose();
-                        System.exit(0);
                         break;
                 }
             }
