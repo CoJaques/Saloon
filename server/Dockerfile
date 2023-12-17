@@ -1,4 +1,8 @@
-FROM ubuntu:latest
-LABEL authors="Colinos"
+FROM eclipse-temurin:17
+WORKDIR /app
 
-ENTRYPOINT ["top", "-b"]
+COPY target/server-1.0.0.jar /app/server-1.0.0.jar
+EXPOSE 1312
+EXPOSE 1313
+ENTRYPOINT ["java", "-jar", "server-1.0.0.jar"]
+CMD ["--help"]
