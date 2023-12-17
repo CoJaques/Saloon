@@ -1,0 +1,25 @@
+services:
+  server:
+    image: ghcr.io/cojaques/saloon_server:v1.0.0
+    command:
+      - -A "eth0"
+
+  client1:
+    image: ghcr.io/cojaques/saloon_client:v1.0.0
+    command:
+      - -A "eth0"
+      - -H server
+    depends_on:
+      - server
+    stdin_open: true
+    tty: true
+
+  client2:
+    image: ghcr.io/cojaques/saloon_client:v1.0.0
+    command:
+      - -A "eth0"
+      - -H server
+    depends_on:
+      - server
+    stdin_open: true
+    tty: true
