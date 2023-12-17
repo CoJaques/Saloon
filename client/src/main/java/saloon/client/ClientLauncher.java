@@ -5,8 +5,6 @@ import java.net.SocketException;
 
 public class ClientLauncher {
 
-
-
     public static void main(String[] args) throws SocketException {
         CommandLineOptions cmdOptions = new CommandLineOptions();
         new CommandLine(cmdOptions).parseArgs(args);
@@ -21,6 +19,5 @@ public class ClientLauncher {
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
-
     }
 }
