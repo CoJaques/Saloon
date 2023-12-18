@@ -23,20 +23,27 @@ public class SaloonClient implements Runnable {
         group = new InetSocketAddress(resolvedAddress, multiPort);
         NetworkInterface networkInterface = NetworkInterface.getByName(interfaceName);
         multicastSocket.joinGroup(group, networkInterface);
+
+        isConnected = false;
     }
     // endregion
 
     // region Private field
     private String userName = null;
     private final Scanner scanner = new Scanner(System.in);
+
     private final DatagramSocket socket;
     private final MulticastSocket multicastSocket;
     private final InetSocketAddress group;
+
     private final String hostName;
     private final int hostPort;
+
     private Thread receiveThread;
     private Thread receiveMultiThread;
     private Thread sendThread;
+
+    private boolean isConnected;
     // endregion
 
     // region Public method
@@ -49,14 +56,14 @@ public class SaloonClient implements Runnable {
             // Thread pour la réception des messages du serveur
             DatagramSocket clientFromServSocket = socket;
             receiveThread = new Thread(() -> {
-                listen(clientFromServSocket);
+                    listen(clientFromServSocket);
             });
             receiveThread.start();
 
             // Thread pour la réception des messages multicast du serveur
             MulticastSocket clientFromServMultiSocket = multicastSocket;
             receiveMultiThread = new Thread(() -> {
-                listen(clientFromServMultiSocket);
+                    listen(clientFromServMultiSocket);
             });
             receiveMultiThread.start();
 
@@ -67,10 +74,9 @@ public class SaloonClient implements Runnable {
             });
             sendThread.start();
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
-        } finally {
-
         }
     }
     // endregion
@@ -107,8 +113,17 @@ public class SaloonClient implements Runnable {
                         receivedPacket.getLength(),
                         StandardCharsets.UTF_8
                 );
+
+                // Si la socket est une MulticastSocket et isConnected est toujours false, alors continuez à attendre.
+                if (clientToServSocket.getClass().equals(MulticastSocket.class) && !isConnected) {
+                    continue;
+                }
+
                 manageAnswer(receivedMessage);
             }
+        } catch (SocketException se) {
+            System.out.println("You have been disconnected from the Saloon!");
+            System.exit(0);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -118,7 +133,10 @@ public class SaloonClient implements Runnable {
         String[] chunks = msg.split(Utils.SEPARATOR);
         String messageType = chunks[0];
 
-        if (Objects.equals(messageType, Message.KO.name())) {
+        if (Objects.equals(messageType, Message.OK.name())) {
+            isConnected = true;
+        }
+        else if (Objects.equals(messageType, Message.KO.name())) {
             System.out.println("Username already existing !");
             userName = null;
         } else if (Objects.equals(messageType, Message.WHO.name())) {
@@ -158,8 +176,7 @@ public class SaloonClient implements Runnable {
                 userName = chunks[1];
                 sendMessage(Message.CONNECT, null, message, socket, hostName, hostPort);
             }
-        }
-        catch(ArrayIndexOutOfBoundsException e) {
+        } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("Wrong format !");
         }
     }
@@ -191,7 +208,6 @@ public class SaloonClient implements Runnable {
     private void quitMessage(String message, DatagramSocket socket) {
         sendMessage(Message.QUIT, null, message, socket, hostName, hostPort);
         dispose();
-        System.exit(0);
     }
 
     private void chat(DatagramSocket clientToSaloonSocket) {
