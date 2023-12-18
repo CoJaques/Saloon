@@ -1,6 +1,7 @@
-<br>SALOON</h1>
-<h3>◦ Dive into the Wild West with Saloon!</h3>
+# SALOON
+*Dive into the Wild West with Saloon!*
 
+<div>
 <img src="https://img.shields.io/github/last-commit/CoJaques/Saloon?style=flat-square&color=5D6D7E" alt="git-last-commit" />
 <img src="https://img.shields.io/github/commit-activity/m/CoJaques/Saloon?style=flat-square&color=5D6D7E" alt="GitHub commit activity" />
 <img src="https://img.shields.io/github/languages/top/CoJaques/Saloon?style=flat-square&color=5D6D7E" alt="GitHub top language" />
