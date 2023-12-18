@@ -29,8 +29,6 @@ public class SaloonServer {
     public void startServer() {
         System.out.println("Saloon Server is starting...");
 
-        System.out.println("Saloon Server is running...");
-
         while (true) {
             byte[] buffer = new byte[1024];
             DatagramPacket incomingPacket = new DatagramPacket(buffer, buffer.length);
@@ -41,7 +39,6 @@ public class SaloonServer {
             }
             managePacket(incomingPacket);
         }
-
     }
 
     private Message parseCommandAndCheckLenght(String[] parsedMessage) {
@@ -52,7 +49,7 @@ public class SaloonServer {
         return getCommand(parsedMessage);
     }
 
-    public void managePacket(DatagramPacket packet) {
+    private void managePacket(DatagramPacket packet) {
         String message = new String(packet.getData(), 0, packet.getLength());
 
         System.out.println("Received message: " + message);
@@ -124,13 +121,12 @@ public class SaloonServer {
     }
 
     private void formatAndSendPrivateMessage(Client sender, String[] messageParts) {
-        String message =
-                Message.PM.name() + Utils.SEPARATOR + sender.username() + Utils.SEPARATOR + messageParts[2] + Utils.SEPARATOR + messageParts[3] + Utils.EOL;
+        String message = Message.PM.name() + Utils.SEPARATOR + sender.username() + Utils.SEPARATOR + messageParts[2] + Utils.SEPARATOR + messageParts[3] + Utils.EOL;
 
         Client receiver = clients.get(messageParts[2]);
         if (receiver == null) {
             System.out.println("Client " + messageParts[2] + " not found");
-            sendUnicastMessage(Message.PM.name() + Utils.SEPARATOR + "Client " + messageParts[1] + " not found" + Utils.EOL, sender);
+            sendUnicastMessage(Message.PM.name() + Utils.SEPARATOR + "Client " + messageParts[2] + " not found" + Utils.EOL, sender);
             return;
         }
         sendUnicastMessage(message, receiver);
@@ -138,8 +134,7 @@ public class SaloonServer {
 
     private void sendMulticastMessage(Client sender, String content) {
         try {
-            String message =
-                    Message.MSG.name() + Utils.SEPARATOR + sender.username() + Utils.SEPARATOR + content + Utils.SEPARATOR + Utils.EOL;
+            String message = Message.MSG.name() + Utils.SEPARATOR + sender.username() + Utils.SEPARATOR + content + Utils.SEPARATOR + Utils.EOL;
             byte[] buffer = message.getBytes(StandardCharsets.UTF_8);
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group);
             multicastSocket.send(packet);

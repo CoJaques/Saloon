@@ -1,0 +1,23 @@
+services:
+ SaloonServer:
+   image: saloon_server:v1.0.0
+   command:
+     - --Adapter=eth0
+ client1:
+   image: saloon_client:v1.0.0
+   command:
+     - --Adapter=eth0
+     - --DefaultHost=SaloonServer
+   depends_on:
+     - SaloonServer
+   stdin_open: true
+   tty: true
+ client2:
+   image: saloon_client:v1.0.0
+   command:
+     - --Adapter=eth0
+     - --DefaultHost=SaloonServer
+   depends_on:
+     - SaloonServer
+   stdin_open: true
+   tty: true

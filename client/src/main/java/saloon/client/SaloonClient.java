@@ -85,6 +85,7 @@ public class SaloonClient implements Runnable {
             txt = formatText(txt, msgType);
             String formattedMessage = Utils.formatMessage(msgType, userName, dest, txt);
             byte[] messageBytes = formattedMessage.getBytes(StandardCharsets.UTF_8);
+
             InetAddress serverAddress = InetAddress.getByName(serverHost);
             DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length, serverAddress, serverPort);
             socket.send(packet);
@@ -140,7 +141,7 @@ public class SaloonClient implements Runnable {
             System.out.println(sender + " : " + message);
         } else if (Objects.equals(messageType, Message.PM.name())) {
             String sender = chunks[1];
-            String message = chunks[2];
+            String message = chunks[3];
 
             System.out.println(sender + " (private) : " + message);
         }
