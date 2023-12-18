@@ -26,12 +26,16 @@ The format of message is : Command;<username>;<usernamedest>;<message>\n
 
 Clients connect to the server by specifying a unique username.
 
-##### Request
+##### Request | Request response
 
 ```
 CONNECT;<username>;<target_saloon>;<username>\n
 ```
-
+Response
+```
+OK when the connection can be done
+KO when the username is not available
+```
 ###### How to use in terminal
 ```
 /connect SlWa99
