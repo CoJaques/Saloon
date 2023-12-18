@@ -73,7 +73,7 @@ cd Saloon
 3. Build the client and the server:
 ```sh
 # Download the dependencies
-./mvnw dependency:resolve
+./mvnw dependency:resolve clean compile
 
 # Package the application
 ./mvnw package
