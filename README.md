@@ -162,8 +162,6 @@ docker pull ghcr.io/cojaques/saloon_client:v1.0.0
 docker pull ghcr.io/cojaques/saloon_server:v1.0.0
 ```
 
-Based on the provided code for your Saloon application's command-line arguments, I'll complete the README sections for the client and server components.
-
 ---
 
 #### Client
