@@ -97,18 +97,16 @@ Once the Jar are generated, you can build the docker images.
 
 be sure to adapt the version number as needed.
 
+### Publishing to GitHub
+
+After building the images, you can publish them to github. Be sure to be logged and have right to publish image.
+
 Once done, you can publish it to github by using :
 
 ```sh
 docker push ghcr.io/cojaques/saloon_client:v1.0.0
 docker push ghcr.io/cojaques/saloon_server:v1.0.0
 ```
-
-
-### Publishing to GitHub
-
-After building the images, you can publish them to github. Be sure to be logged and have right to publish image.
-
 
 ### 📖 Run it with docker compose
 
