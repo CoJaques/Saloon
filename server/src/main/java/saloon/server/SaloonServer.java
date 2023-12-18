@@ -126,7 +126,7 @@ public class SaloonServer {
         Client receiver = clients.get(messageParts[2]);
         if (receiver == null) {
             System.out.println("Client " + messageParts[2] + " not found");
-            sendUnicastMessage(Message.PM.name() + Utils.SEPARATOR + "Client " + messageParts[1] + " not found" + Utils.EOL, sender);
+            sendUnicastMessage(Message.PM.name() + Utils.SEPARATOR + "Client " + messageParts[2] + " not found" + Utils.EOL, sender);
             return;
         }
         sendUnicastMessage(message, receiver);
