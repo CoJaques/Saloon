@@ -52,7 +52,7 @@ The client interface offers a user-friendly environment for interaction within t
 - **Docker Support**: Both the server and client components are Dockerized, enabling easy deployment and scalability. The application is tested to work flawlessly in Docker environments, with special consideration for network configurations and inter-container communication.
 
 ### 📚 Protocol Definition
-For a detailed understanding of the communication protocol used in Saloon, please refer to the protocol definition available at: [Saloon Protocol Definition](https://github.com/CoJaques/Saloon/tree/main/ApplicationProtocolDiagram)
+For a detailed understanding of the communication protocol used in Saloon, please refer to the protocol definition available at: [Saloon Protocol Definition](https://github.com/CoJaques/Saloon/tree/main/Protocol_Application)
 
 ## 🚀 Getting started
 
@@ -176,10 +176,10 @@ docker run ghcr.io/cojaques/saloon_client:v1.0.0 [options]
 
 ##### Command-Line Arguments for Client
 
-- `-UP, --UniPort` : The unicast port of the server to connect to. Default is set as per `Utils.UNICAST_PORT`.
-- `-MP, --MultiPort` : The multicast port of the server for group communications. Default is set as per `Utils.MULTICAST_PORT`.
-- `-H, --DefaultHost` : The server host address to connect to. Default is `Utils.DEFAULT_HOST`.
-- `-M, --MultiCastAddress` : The multicast address of the server. Default is `Utils.DEFAULT_MULTICAST`.
+- `-UP, --UniPort` : The unicast port of the server to connect to. Default is set as per `1312`.
+- `-MP, --MultiPort` : The multicast port of the server for group communications. Default is set as per `1313`.
+- `-H, --DefaultHost` : The server host address to connect to. Default is `192.168.23.23`.
+- `-M, --MultiCastAddress` : The multicast address of the server. Default is `239.1.1.1`.
 - `-A, --Adapter` : Define the network adapter to use for the multicast.
 
 #### Server
@@ -194,9 +194,9 @@ docker run ghcr.io/cojaques/saloon_server:v1.0.0 [options]
 
 ##### Command-Line Arguments for Server
 
-- `-MP, --MultiPort` : The multicast port of the server for broadcasting messages. Default is set as per `Utils.MULTICAST_PORT`.
-- `-UP, --UniPort` : The unicast port of the server for receiving client messages. Default is set as per `Utils.UNICAST_PORT`.
-- `-M, --MultiCastAddress` : The multicast address used by the server. Default is `Utils.DEFAULT_MULTICAST`.
+- `-UP, --UniPort` : The unicast port of the server for receiving client messages. Default is set as per `1312`.
+- `-MP, --MultiPort` : The multicast port of the server for broadcasting messages. Default is set as per `1313`.
+- `-M, --MultiCastAddress` : The multicast address used by the server. Default is `239.1.1.1`.
 - `-A, --Adapter` : Specify the network adapter to use for handling multicast traffic.
 
 ---
