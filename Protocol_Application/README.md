@@ -6,7 +6,10 @@ Saloon is a chat application that facilitates real-time communication between cl
 
 ## Section 2 - Transport Protocol
 
-The Saloon protocol utilizes UDP for communication. The default port for Saloon is 1312.
+The Saloon protocol utilizes UDP for communication. The default port used for the server is 1312, it's used for unicast.
+Client use any available port. 
+
+The multicast adress can be defined with program's argument. The multicast port too, by default the multicast port is 1313.
 
 The initial connection is initiated by the client. The server supports multiple client connections.
 
